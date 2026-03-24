@@ -22,7 +22,7 @@ export default function SQLAnalyzer() {
       formData.append("query", query);
     }
 
-    const res = await fetch("http://localhost:8000/analyze-sql", {
+    const res = await fetch("https://log-analyzer-sisa.onrender.com/analyze-sql", {
       method: "POST",
       body: formData,
     });

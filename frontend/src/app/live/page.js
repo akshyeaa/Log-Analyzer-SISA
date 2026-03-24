@@ -13,7 +13,7 @@ export default function LiveChat() {
     const formData = new FormData();
     formData.append("text", input);
 
-    const res = await fetch("http://localhost:8000/analyze-text", {
+    const res = await fetch("https://log-analyzer-sisa.onrender.com/analyze-text", {
       method: "POST",
       body: formData,
     });

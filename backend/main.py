@@ -8,12 +8,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from dotenv import load_dotenv
+from typing import Optional
 import os
 
 #  Load ENV
 load_dotenv()
 
 app = FastAPI()
+
+@app.get("/")
+def root():
+    return {
+        "status": "Backend is running successfully",
+        "message": "AI Secure Log Analyzer API is active"
+    }
 
 #  CORS
 app.add_middleware(
@@ -33,8 +41,17 @@ MAX_SIZE = 5 * 1024 * 1024  # 5MB
 #  FILE ANALYSIS
 @app.post("/analyze")
 @limiter.limit("5/minute")
-async def analyze(request: Request, files: List[UploadFile] = File(...)):
+async def analyze(
+    request: Request,
+    files: Optional[List[UploadFile]] = File(None)
+):
     results = []
+    
+    if files is None or len(files) == 0:
+        return {
+            "status": "Backend working fine",
+            "message": "Upload files to analyze logs"
+        }
 
     groq_key = os.getenv("GROQ_API_KEY")
 

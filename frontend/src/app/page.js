@@ -21,7 +21,7 @@ export default function Home() {
     const formData = new FormData();
     files.forEach((f) => formData.append("files", f));
 
-    const res = await fetch("http://localhost:8000/analyze", {
+    const res = await fetch("https://log-analyzer-sisa.onrender.com/analyze", {
       method: "POST",
       body: formData,
     });
@@ -32,7 +32,7 @@ export default function Home() {
 
   const selected = results[selectedIndex];
 
-  // 🔥 AI FORMAT (ONLY ADDITION)
+  // AI FORMAT
   const formatAI = (text) => {
     if (!text) return null;
 
@@ -70,7 +70,7 @@ export default function Home() {
     );
   };
 
-  // 🔥 HIGHLIGHT (UNCHANGED)
+  //  HIGHLIGHT 
   const renderLines = (text, findings) => {
     const lines = text.split("\n");
 
@@ -247,7 +247,7 @@ export default function Home() {
               <p className="font-mono text-sm">{selected.summary}</p>
             </div>
 
-            {/* 🔥 DROPDOWN RESTORED */}
+            {/* DROPDOWN */}
             <details className="bg-white/10 p-4 rounded-xl">
               <summary className="cursor-pointer font-bold font-mono text-sm">
                 View All Breaches ({selected.findings.length})
