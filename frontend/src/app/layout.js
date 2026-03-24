@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "AI Secure Data Intelligence Platform",
   description: "Analyze logs, detect risks, and generate AI insights",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
