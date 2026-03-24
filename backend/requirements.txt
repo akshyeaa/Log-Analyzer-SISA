@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+langchain
+pypdf
+python-docx
+slowapi
+groq
+python-dotenv
