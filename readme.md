@@ -241,7 +241,7 @@ Software Development
 
 ---
 
-## Live Application (Optional)
+## Live Application
 
 #### Deployed Link : 
 <Your Deployment Link>  
