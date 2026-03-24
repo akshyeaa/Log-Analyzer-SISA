@@ -1,100 +1,3 @@
-# # import os
-
-# # def generate_insights(findings, log_insights, text):
-# #     insights = []
-
-# #     # Rule-based fallback
-# #     types = [f["type"] for f in findings]
-
-# #     if "password" in types:
-# #         insights.append("Sensitive credentials exposed")
-
-# #     if "api_key" in types:
-# #         insights.append("API key exposed")
-
-# #     if "token" in types:
-# #         insights.append("Authentication token exposed")
-
-# #     insights.extend(log_insights)
-
-# #     # Optional AI (Groq)
-# #     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-# #     if GROQ_API_KEY:
-# #         try:
-# #             from groq import Groq
-
-# #             client = Groq(api_key=GROQ_API_KEY)
-
-# #             prompt = f"""
-# #             Analyze the following logs and provide security risks and summary:
-# #             {text[:2000]}
-# #             """
-
-# #             response = client.chat.completions.create(
-# #                 model="llama-3.3-70b-versatile",
-# #                 messages=[{"role": "user", "content": prompt}]
-# #             )
-
-# #             ai_output = response.choices[0].message.content
-# #             insights.append(ai_output)
-
-# #         except Exception:
-# #             insights.append("AI analysis failed, fallback used")
-
-# #     return insights
-
-
-# def generate_insights(findings, log_insights, text, groq_key=None):
-#     insights = []
-#     ai_insights = []
-
-#     types = [f["type"] for f in findings]
-
-#     if "password" in types:
-#         insights.append("Sensitive credentials exposed")
-
-#     if "api_key" in types:
-#         insights.append("API key exposed")
-
-#     if "token" in types:
-#         insights.append("Authentication token exposed")
-
-#     insights.extend(log_insights)
-
-#     # 🔥 GROQ AI
-#     if groq_key:
-#         try:
-#             from groq import Groq
-
-#             client = Groq(api_key=groq_key)
-
-#             prompt = f"""
-#             Analyze logs and give:
-#             1. Summary
-#             2. Security risks
-#             3. Recommendations
-
-#             Logs:
-#             {text[:2000]}
-#             """
-
-#             response = client.chat.completions.create(
-#                 model="llama3-8b-8192",
-#                 messages=[{"role": "user", "content": prompt}]
-#             )
-
-#             ai_output = response.choices[0].message.content
-#             ai_insights.append(ai_output)
-
-#         except Exception as e:
-#             ai_insights.append("AI analysis failed")
-
-#     return {
-#         "basic": list(set(insights)),
-#         "ai": ai_insights
-#     }
-
 from typing import Dict, List
 
 def generate_insights(findings, log_insights, text, groq_key=None) -> Dict:
@@ -114,7 +17,7 @@ def generate_insights(findings, log_insights, text, groq_key=None) -> Dict:
 
     insights.extend(log_insights)
 
-    #  GROQ AI
+    # 🔥 GROQ AI
     if groq_key:
         try:
             from groq import Groq
@@ -122,24 +25,26 @@ def generate_insights(findings, log_insights, text, groq_key=None) -> Dict:
             client = Groq(api_key=groq_key)
 
             prompt = f"""
-            Analyze the following logs and give output in simple points.
+You are analyzing logs where sensitive values are masked for security.
 
-            Return ONLY this format:
+Even if values look partially hidden (like abc***), assume they are complete in actual logs.
 
-            SUMMARY:
-            - short simple points
+Return ONLY this format:
 
-            ANOMALIES:
-            - unusual or suspicious behavior
+SUMMARY:
+- short simple points
 
-            RISKS:
-            - possible security risks
+ANOMALIES:
+- unusual or suspicious behavior
 
-            Keep it simple and easy to understand.
+RISKS:
+- possible security risks
 
-            Logs:
-            {text[:1200]}
-            """
+Keep answers simple and clear.
+
+Logs:
+{text}
+"""
 
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -147,8 +52,18 @@ def generate_insights(findings, log_insights, text, groq_key=None) -> Dict:
             )
 
             ai_output = response.choices[0].message.content
+
+            # 🔥 CLEAN MARKDOWN
             ai_output = ai_output.replace("**", "")
-            ai_insights.append(ai_output)
+
+            # 🔥 FORMAT INTO PROPER LINES
+            formatted_lines = []
+            for line in ai_output.split("\n"):
+                line = line.strip()
+                if line:
+                    formatted_lines.append(line)
+
+            ai_insights.append("\n".join(formatted_lines))
 
         except Exception as e:
             ai_insights.append(f"AI error: {str(e)}")

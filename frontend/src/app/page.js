@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [files, setFiles] = useState([]);
@@ -9,6 +10,7 @@ export default function Home() {
   const [currentFinding, setCurrentFinding] = useState(0);
 
   const inputRef = useRef(null);
+  const router = useRouter();
 
   const handleUpload = async () => {
     if (files.length === 0) {
@@ -30,7 +32,45 @@ export default function Home() {
 
   const selected = results[selectedIndex];
 
-  // 🔥 CONSISTENT FULL HIGHLIGHT
+  // 🔥 AI FORMAT (ONLY ADDITION)
+  const formatAI = (text) => {
+    if (!text) return null;
+
+    const sections = text.split(/SUMMARY:|ANOMALIES:|RISKS:/);
+
+    return (
+      <div className="space-y-3 text-sm font-mono">
+        {text.includes("SUMMARY") && (
+          <div>
+            <p className="font-bold text-green-300 text-lg">SUMMARY</p>
+            {sections[1]?.split("-").map((s, i) =>
+              s.trim() && <p key={i}>• {s.trim()}</p>
+            )}
+          </div>
+        )}
+
+        {text.includes("ANOMALIES") && (
+          <div>
+            <p className="font-bold text-yellow-300 text-lg">ANOMALIES</p>
+            {sections[2]?.split("-").map((s, i) =>
+              s.trim() && <p key={i}>• {s.trim()}</p>
+            )}
+          </div>
+        )}
+
+        {text.includes("RISKS") && (
+          <div>
+            <p className="font-bold text-red-300 text-lg">RISKS</p>
+            {sections[3]?.split("-").map((s, i) =>
+              s.trim() && <p key={i}>• {s.trim()}</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 🔥 HIGHLIGHT (UNCHANGED)
   const renderLines = (text, findings) => {
     const lines = text.split("\n");
 
@@ -47,7 +87,6 @@ export default function Home() {
             ? "bg-orange-400 text-black"
             : "bg-yellow-300 text-black";
 
-        // 🔥 highlight FULL PATTERN (not partial)
         const escaped = f.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const regex = new RegExp(escaped, "g");
 
@@ -64,9 +103,9 @@ export default function Home() {
 
       return (
         <div key={i} id={`line-${i}`} className={`flex px-2 py-1 ${bg}`}>
-          <span className="w-10 text-gray-500 text-right mr-3">{i + 1}</span>
+          <span className="w-10 text-gray-500 text-right mr-3 text-sm">{i + 1}</span>
           <span
-            className="flex-1 whitespace-pre-wrap"
+            className="flex-1 whitespace-pre-wrap text-sm font-mono"
             dangerouslySetInnerHTML={{ __html: highlightedLine }}
           />
         </div>
@@ -74,14 +113,12 @@ export default function Home() {
     });
   };
 
-  // 🔥 REMOVE FILE FROM PREVIEW
   const removeFile = (index) => {
     const newFiles = [...files];
     newFiles.splice(index, 1);
     setFiles(newFiles);
   };
 
-  // 🔥 REMOVE FILE FROM RESULTS (SIDEBAR)
   const removeResult = (index) => {
     const newResults = [...results];
     newResults.splice(index, 1);
@@ -89,34 +126,18 @@ export default function Home() {
     setSelectedIndex(0);
   };
 
-  // 🔥 NAVIGATION
   const nextFinding = () => {
     if (!selected) return;
-
     const next = (currentFinding + 1) % selected.findings.length;
     setCurrentFinding(next);
-
-    const line = selected.findings[next].line - 1;
-    document.getElementById(`line-${line}`)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
+    document.getElementById(`line-${selected.findings[next].line - 1}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const prevFinding = () => {
     if (!selected) return;
-
-    const prev =
-      (currentFinding - 1 + selected.findings.length) %
-      selected.findings.length;
-
+    const prev = (currentFinding - 1 + selected.findings.length) % selected.findings.length;
     setCurrentFinding(prev);
-
-    const line = selected.findings[prev].line - 1;
-    document.getElementById(`line-${line}`)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
+    document.getElementById(`line-${selected.findings[prev].line - 1}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
@@ -124,50 +145,54 @@ export default function Home() {
 
       {/* Sidebar */}
       {sidebarOpen && (
-        <div className="w-72 p-4 bg-white/5 backdrop-blur border-r border-white/10">
+        <div className="w-72 p-4 bg-white/5 backdrop-blur border-r border-white/10 flex flex-col justify-between">
 
-          <h2 className="text-center font-bold mb-4 mt-5">FILES</h2>
+          <div>
+            <h2 className="text-center font-bold mb-4 mt-5 font-mono text-lg">FILES</h2>
 
-          <div className="space-y-3">
-            {results.map((f, i) => {
-
-              const hasCritical = f.findings.some(x => x.risk === "critical");
-              const hasHigh = f.findings.some(x => x.risk === "high");
-              const hasLow = f.findings.some(x => x.risk === "low");
-
-              let hoverColor = "hover:border-green-400";
-              if (hasCritical) hoverColor = "hover:border-red-500";
-              else if (hasHigh) hoverColor = "hover:border-orange-400";
-              else if (hasLow) hoverColor = "hover:border-yellow-400";
-
-              return (
+            <div className="space-y-3">
+              {results.map((f, i) => (
                 <div
                   key={i}
-                  className={`relative p-3 rounded-2xl cursor-pointer text-center border border-white/10 transition-all hover:bg-white/10 hover:border-2 ${hoverColor}`}
+                  className="relative p-3 rounded-2xl cursor-pointer text-center border border-white/10 transition-all hover:bg-white/10"
                 >
-                  <div onClick={() => setSelectedIndex(i)}>
+                  <div onClick={() => setSelectedIndex(i)} className="font-mono text-sm">
                     {f.file_name}
                   </div>
 
-                  {/* ❌ REMOVE BUTTON */}
+                  {/* CENTERED ❌ */}
                   <button
                     onClick={() => removeResult(i)}
-                    className="absolute top-1 right-2 text-xs opacity-0 hover:opacity-100 group-hover:opacity-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs"
                   >
                     ❌
                   </button>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          {/* NEW BUTTONS */}
+          <div className="space-y-2 mt-6">
+            <button
+              onClick={() => router.push("/live")}
+              className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
+            >
+              Live Chat
+            </button>
+
+            <button
+              onClick={() => router.push("/sql")}
+              className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
+            >
+              SQL Analyzer
+            </button>
           </div>
         </div>
       )}
 
       {/* Toggle */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute top-4 left-4 z-50 bg-black/60 px-2 py-1 rounded"
-      >
+      <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute top-4 left-4 z-50 bg-black/60 px-2 py-1 rounded">
         {sidebarOpen ? "←" : "→"}
       </button>
 
@@ -186,33 +211,21 @@ export default function Home() {
             setFiles([...files, ...Array.from(e.dataTransfer.files)]);
           }}
           onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-white/30 p-8 py-15 rounded-xl text-center cursor-pointer bg-white/5 hover:bg-white/10 mb-4 font-mono"
+          className="border-2 border-dashed border-white/30 p-8 py-15 rounded-xl text-center cursor-pointer bg-white/5 hover:bg-white/10 mb-4 font-mono text-sm"
         >
           Drag & Drop files or Click Here
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) =>
-              setFiles([...files, ...Array.from(e.target.files)])
-            }
+          <input ref={inputRef} type="file" multiple className="hidden"
+            onChange={(e) => setFiles([...files, ...Array.from(e.target.files)])}
           />
         </div>
 
-        {/* Preview with REMOVE */}
+        {/* Preview */}
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4 justify-center">
             {files.map((f, i) => (
-              <div key={i} className="relative bg-white/10 px-3 py-1 rounded-full">
+              <div key={i} className="bg-white/10 px-3 py-1 rounded-full font-mono text-sm">
                 {f.name}
-
-                <button
-                  onClick={() => removeFile(i)}
-                  className="ml-2 text-xs"
-                >
-                  ❌
-                </button>
+                <button onClick={() => removeFile(i)} className="ml-2 text-xs">❌</button>
               </div>
             ))}
           </div>
@@ -220,10 +233,7 @@ export default function Home() {
 
         {/* Analyze */}
         <div className="flex justify-center">
-          <button
-            onClick={handleUpload}
-            className="bg-white hover:font-bold text-black hover:bg-amber-100 px-6 py-2 rounded-lg font-mono"
-          >
+          <button onClick={handleUpload} className="bg-white text-black px-6 py-2 rounded-lg font-mono text-sm">
             Analyze Files
           </button>
         </div>
@@ -233,62 +243,48 @@ export default function Home() {
           <div className="mt-6 space-y-6">
 
             <div className="bg-white/10 p-4 rounded-xl">
-              <h2 className="text-xl font-bold">{selected.file_name}</h2>
-              <p>{selected.summary}</p>
+              <h2 className="font-bold font-mono text-lg">{selected.file_name}</h2>
+              <p className="font-mono text-sm">{selected.summary}</p>
             </div>
 
-            {/* Dropdown */}
+            {/* 🔥 DROPDOWN RESTORED */}
             <details className="bg-white/10 p-4 rounded-xl">
-              <summary className="cursor-pointer font-bold">
+              <summary className="cursor-pointer font-bold font-mono text-sm">
                 View All Breaches ({selected.findings.length})
               </summary>
 
               <div className="mt-3 space-y-2">
                 {selected.findings.map((f, i) => (
-                  <div
-                    key={i}
-                    className={`px-3 py-1 rounded text-sm
-                    ${
-                      f.risk === "critical"
-                        ? "bg-red-500/20 text-red-300"
-                        : f.risk === "high"
-                        ? "bg-orange-400/20 text-orange-300"
-                        : "bg-yellow-300/20 text-yellow-200"
-                    }`}
-                  >
+                  <div key={i} className="px-3 py-1 rounded text-sm font-mono">
                     {f.line} → {f.value} ({f.risk})
                   </div>
                 ))}
               </div>
             </details>
 
-            {/* INSIGHTS */}
+            {/* Insights */}
             <div className="bg-white/10 p-4 rounded-xl">
-              <h3 className="font-bold">Insights</h3>
+              <h3 className="font-bold font-mono text-lg">Insights</h3>
               {selected.insights.basic.map((i, idx) => (
-                <p key={idx}>• {i}</p>
+                <p key={idx} className="font-mono text-sm">• {i}</p>
               ))}
             </div>
 
-            {/* AI INSIGHTS */}
+            {/* AI Insights */}
             {selected.insights.ai.length > 0 && (
-              <div className="bg-white/10 p-4 rounded-xl border border-white/20">
-                <h3 className="font-bold">AI Insights</h3>
+              <div className="bg-white/10 p-4 rounded-xl">
+                <h3 className="font-bold font-mono text-lg">AI Insights</h3>
                 {selected.insights.ai.map((i, idx) => (
-                  <p key={idx}>{i}</p>
+                  <div key={idx}>{formatAI(i)}</div>
                 ))}
               </div>
             )}
 
-            {/* NAVIGATION */}
+            {/* Navigation */}
             {selected.findings.length > 1 && (
               <div className="flex gap-4 justify-center">
-                <button onClick={prevFinding} className="bg-white/10 px-4 py-2 rounded hover:bg-white/20">
-                  ⬆ Prev
-                </button>
-                <button onClick={nextFinding} className="bg-white/10 px-4 py-2 rounded hover:bg-white/20">
-                  ⬇ Next
-                </button>
+                <button onClick={prevFinding} className="font-mono text-sm">⬆ Prev</button>
+                <button onClick={nextFinding} className="font-mono text-sm">⬇ Next</button>
               </div>
             )}
 
