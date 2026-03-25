@@ -1,3 +1,4 @@
+# Not used (directly implemented in main.py)
 import re
 
 def mask_data(text):

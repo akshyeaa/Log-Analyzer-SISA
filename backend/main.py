@@ -107,7 +107,7 @@ async def analyze(
 
         ai_input = "\n".join(important_lines[:50])
 
-        # 🤖 AI INSIGHTS
+        #  AI INSIGHTS
         insights = generate_insights(
             all_findings,
             log_insights,

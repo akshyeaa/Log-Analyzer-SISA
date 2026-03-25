@@ -17,7 +17,7 @@ def generate_insights(findings, log_insights, text, groq_key=None) -> Dict:
 
     insights.extend(log_insights)
 
-    # 🔥 GROQ AI
+    #  GROQ AI
     if groq_key:
         try:
             from groq import Groq
@@ -53,10 +53,8 @@ Logs:
 
             ai_output = response.choices[0].message.content
 
-            # 🔥 CLEAN MARKDOWN
             ai_output = ai_output.replace("**", "")
 
-            # 🔥 FORMAT INTO PROPER LINES
             formatted_lines = []
             for line in ai_output.split("\n"):
                 line = line.strip()

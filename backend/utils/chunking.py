@@ -1,3 +1,4 @@
+# Not Used (directly implemented in main.py)
 def chunk_text(text, chunk_size=1000):
     """
     Splits text into chunks of given size (by characters)

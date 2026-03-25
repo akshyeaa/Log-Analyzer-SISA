@@ -243,9 +243,15 @@ Software Development
 
 ## Live Application
 
-#### Deployed Link : 
-<Your Deployment Link>  
+### Deployed Links : 
+Frontend (Vercel):  
+https://log-analyzer-sisa.vercel.app/
 
+Backend (Render):  
+https://log-analyzer-sisa.onrender.com/
+
+###### Note: The backend is deployed on Render's free tier and may go to sleep when inactive. The first request can take up to 30–60 seconds to respond. Please allow some time for the service to start.
+###### Tip: Open the backend link once before using the frontend to avoid initial delay.
 ---
 
 ## Notes

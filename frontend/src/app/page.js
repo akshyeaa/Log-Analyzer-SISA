@@ -8,6 +8,7 @@ export default function Home() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentFinding, setCurrentFinding] = useState(0);
+  const [showStartupNote, setShowStartupNote] = useState(true);
 
   const inputRef = useRef(null);
   const router = useRouter();
@@ -145,22 +146,37 @@ export default function Home() {
 
       {/* Sidebar */}
       {sidebarOpen && (
-        <div className="w-72 p-4 bg-white/5 backdrop-blur border-r border-white/10 flex flex-col justify-between">
+      <div className="w-72 p-4 bg-white/5 backdrop-blur border-r border-white/10 flex flex-col justify-between">
 
-          <div>
-            <h2 className="text-center font-bold mb-4 mt-5 font-mono text-lg">FILES</h2>
+        <div>
+          <h2 className="text-center font-bold mb-4 mt-5 font-mono text-lg">FILES</h2>
 
-            <div className="space-y-3">
-              {results.map((f, i) => (
+          <div className="space-y-3">
+            {results.map((f, i) => {
+              const findings = f.findings || [];
+
+              const hasCritical = findings.some((x) => x.risk === "critical");
+              const hasHigh = findings.some((x) => x.risk === "high");
+              const hasLow = findings.some((x) => x.risk === "low");
+
+              let hoverColor = "hover:border-green-400";
+              if (hasCritical) hoverColor = "hover:border-red-500";
+              else if (hasHigh) hoverColor = "hover:border-orange-400";
+              else if (hasLow) hoverColor = "hover:border-yellow-400";
+
+              return (
                 <div
                   key={i}
-                  className="relative p-3 rounded-2xl cursor-pointer text-center border border-white/10 transition-all hover:bg-white/10"
+                  className={`relative p-3 rounded-2xl cursor-pointer text-center border border-white/10 transition-all hover:bg-white/10 hover:border-2 ${hoverColor}`}
                 >
-                  <div onClick={() => setSelectedIndex(i)} className="font-mono text-sm">
+                  <div
+                    onClick={() => setSelectedIndex(i)}
+                    className="font-mono text-sm"
+                  >
                     {f.file_name}
                   </div>
 
-                  {/* CENTERED ❌ */}
+                  {/* CENTERED */}
                   <button
                     onClick={() => removeResult(i)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-xs"
@@ -168,28 +184,29 @@ export default function Home() {
                     ❌
                   </button>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* NEW BUTTONS */}
-          <div className="space-y-2 mt-6">
-            <button
-              onClick={() => router.push("/live")}
-              className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
-            >
-              Live Chat
-            </button>
-
-            <button
-              onClick={() => router.push("/sql")}
-              className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
-            >
-              SQL Analyzer
-            </button>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        {/* NEW BUTTONS */}
+        <div className="space-y-2 mt-6">
+          <button
+            onClick={() => router.push("/live")}
+            className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
+          >
+            Live Chat
+          </button>
+
+          <button
+            onClick={() => router.push("/sql")}
+            className="w-full bg-white/10 hover:bg-white/20 py-2 rounded font-mono text-sm"
+          >
+            SQL Analyzer
+          </button>
+        </div>
+      </div>
+    )}
 
       {/* Toggle */}
       <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute top-4 left-4 z-50 bg-black/60 px-2 py-1 rounded">
@@ -198,7 +215,35 @@ export default function Home() {
 
       {/* Main */}
       <div className="flex-1 p-6 overflow-y-auto">
+        {showStartupNote && (
+  <div className="mb-6 mx-auto max-w-3xl bg-white/10 border border-white/15 rounded-2xl p-4 backdrop-blur relative font-mono">
+    <button
+      onClick={() => setShowStartupNote(false)}
+      className="absolute top-2 right-3 text-sm text-gray-300 hover:text-white"
+    >
+      ✕
+    </button>
 
+    <h2 className="text-sm font-bold mb-2 text-white/90">Note</h2>
+
+    <p className="text-sm text-gray-200 leading-relaxed">
+      Backend may take <span className="font-semibold text-white">30–60 seconds</span> to respond on first use because it is hosted on the Render free tier.
+    </p>
+
+    <p className="text-sm text-gray-300 mt-2 leading-relaxed">
+      <span className="text-sm font-bold mb-2 text-white/90">Tip:</span> Open the backend link once for slightly faster usage:
+    </p>
+
+    <a
+      href="https://log-analyzer-sisa.onrender.com/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm text-blue-300 hover:text-blue-200 underline break-all"
+    >
+      https://log-analyzer-sisa.onrender.com/
+    </a>
+  </div>
+)}
         <h1 className="text-3xl font-bold text-center mb-6 font-mono">
           Log Security Dashboard
         </h1>
@@ -217,7 +262,13 @@ export default function Home() {
           <input ref={inputRef} type="file" multiple className="hidden"
             onChange={(e) => setFiles([...files, ...Array.from(e.target.files)])}
           />
+
+          <p className="text-xs text-gray-400 text-center mt-2 font-mono">
+           ( Supported formats: TXT, LOG, PDF, DOCX | Max file size: 5MB )
+        </p>
         </div>
+
+        
 
         {/* Preview */}
         {files.length > 0 && (
@@ -233,7 +284,7 @@ export default function Home() {
 
         {/* Analyze */}
         <div className="flex justify-center">
-          <button onClick={handleUpload} className="bg-white text-black px-6 py-2 rounded-lg font-mono text-sm">
+          <button onClick={handleUpload} className="bg-white text-black px-6 py-2 rounded-lg font-mono text-sm hover:bg-white/95 hover:font-semibold">
             Analyze Files
           </button>
         </div>

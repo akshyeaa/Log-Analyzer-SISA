@@ -53,7 +53,7 @@ export default function SQLAnalyzer() {
             setFile(e.dataTransfer.files[0]);
           }}
           onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-white/30 p-6 py-10 mt-8 rounded text-center cursor-pointer mb-4"
+          className="border-2 border-dashed border-white/30 p-8 py-12 rounded-xl text-center cursor-pointer bg-white/2 hover:bg-white/5 my-4 font-mono text-sm"
         >
           Drag & Drop SQL file or Click
           <input
@@ -110,7 +110,7 @@ export default function SQLAnalyzer() {
             ))}
           </div>
 
-          {/* ✅ BASIC INSIGHTS */}
+          {/*  BASIC INSIGHTS */}
           <div className="bg-white/10 p-4 rounded">
             <h3 className="text-lg">Insights</h3>
             {(result.insights?.basic || []).map((i, idx) => (
@@ -118,7 +118,7 @@ export default function SQLAnalyzer() {
             ))}
           </div>
 
-          {/* ✅ AI INSIGHTS (ADDED CLEANLY) */}
+          {/*  AI INSIGHTS (ADDED CLEANLY) */}
           {result.insights?.ai?.length > 0 && (
             <div className="bg-white/10 p-4 rounded border border-white/20">
               <h3 className="text-lg">AI Insights</h3>
