@@ -1,9 +1,9 @@
 # Log Analysis & Data Intelligence Platform
 
 ## Overview
-Log Analysis & Data Intelligence Platform is a full-stack application designed to analyze logs, files, SQL queries, and live text input to detect sensitive data exposure and security risks.
+Log Analysis & Data Intelligence Platform is a full-stack security analysis application designed to function as a secure data scanner, log analyzer, AI insight layer, and risk assessment system.
 
-The system identifies credentials such as passwords, API keys, tokens, emails, and phone numbers, evaluates risk levels, and generates both rule-based and AI-powered insights.
+The platform ingests logs, files, SQL queries, and live text input to detect exposed sensitive data such as passwords, API keys, tokens, emails, and phone numbers. It evaluates security risk levels, highlights findings visually, and generates both rule-based and AI-powered insights to help users quickly understand possible threats and leaks.
 
 ---
 
@@ -19,7 +19,7 @@ This project solves the problem by automating:
 
 ---
 
-## Features
+## Key Features
 
 ### Multi-Input Support
 - Log files (.log, .txt)
@@ -28,17 +28,31 @@ This project solves the problem by automating:
 - SQL queries (file or text)
 - Live chat / text input
 
-### Sensitive Data Detection
-Detects:
+### Detection Engine
+Detects and extracts:
 - Emails
 - Passwords
 - API Keys (sk-, gsk_, AIza, hf_)
 - Tokens (Bearer, token=)
 - Phone numbers
 
+### Log Analyzer Module
+- Line-by-line log scanning
+- Sensitive data leak detection
+- Credentials in logs
+- Suspicious security patterns
+- Repeated breach visibility
+
 ### Risk Engine
 - Assigns risk levels: low, medium, high, critical
 - Calculates overall risk score
+- Helps classify breach severity
+
+### Policy Engine
+- Masks sensitive values before AI processing
+- Prevents raw secrets from being sent to the AI model
+- Enforces secure input handling
+- Supports file size and request control
 
 ### AI-Based Log Insights
 Generates:
@@ -51,10 +65,10 @@ Generates:
 - Highlighted sensitive data
 - Risk-based color coding
 - Navigation between breaches
+- Structured dropdown view of all findings
 
 ### SQL Analyzer
 - Detects sensitive data inside SQL queries
-- Supports multi-line INSERT statements
 - Works with both file upload and text input
 
 ### Live Chat Analyzer
@@ -65,6 +79,13 @@ Generates:
 - API key stored securely using environment variables
 - Rate limiting implemented
 - File size limits (5MB)
+- Sensitive values masked before AI analysis
+
+### Observability
+- File-wise summary and results
+- Risk visibility for each analyzed input
+- Insight panels for detected issues
+- Easy traceability of exposed data
 
 ---
 
@@ -195,18 +216,37 @@ http://localhost:3000
 
 ### Approach and Design
 
-- Modular backend with:
-  - Detection Engine  
-  - Risk Engine  
-  - Log Analyzer  
-  - AI Insights  
+The system is built using a modular pipeline architecture:
+```
+Input (Text / File / SQL / Chat / Logs)
+↓
+Validation
+↓
+Extraction / Parsing
+↓
+Detection Engine
+↓
+Log Analyzer
+↓
+Risk Engine
+↓
+Policy Layer
+↓
+AI Insights + Response
+```
+Main backend modules include:
+- Detection Engine
+- Log Analyzer
+- Risk Engine
+- Policy Layer
+- AI Insight Generator
 
-- All inputs converted to text  
-- Regex + structured parsing used  
-- SQL handled using column-value mapping  
-- AI receives masked data for safety  
-
----
+Design choices:
+- All inputs are normalized into analyzable text
+- Regex-based scanning is used for fast sensitive data detection
+- SQL is handled using column-value mapping
+- Sensitive values are masked before being sent to AI
+- Results are returned with findings, risk scores, and insights
 
 ### Challenges Faced
 
@@ -236,8 +276,8 @@ Software Development
 
 ## Demo Video
 
-#### Link :
-<Your Demo Video Link>  
+#### Drive Link : 
+https://drive.google.com/file/d/1Mc5H6Ha32zwYo4jWm3JWpethgZqrJrxq/view?usp=sharing 
 
 ---
 
