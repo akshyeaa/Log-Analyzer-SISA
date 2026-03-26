@@ -1,5 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, Request
-from typing import List
+from fastapi import FastAPI, UploadFile, File, Request, Form
+from typing import List, Optional
 from analyzer.detection import detect_sensitive_data
 from analyzer.log_analyzer import analyze_logs
 from analyzer.risk_engine import calculate_risk
@@ -8,10 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from dotenv import load_dotenv
-from typing import Optional
 import os
 
-#  Load ENV
+# Load ENV
 load_dotenv()
 
 app = FastAPI()
@@ -23,7 +22,7 @@ def root():
         "message": "AI Secure Log Analyzer API is active"
     }
 
-#  CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,13 +31,74 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#  RATE LIMIT
+# RATE LIMIT
 limiter = Limiter(key_func=get_remote_address)
 
 MAX_SIZE = 5 * 1024 * 1024  # 5MB
 
 
-#  FILE ANALYSIS
+# -------------------------------
+# COMMON ANALYSIS FUNCTION
+# -------------------------------
+def run_full_analysis(text: str):
+    groq_key = os.getenv("GROQ_API_KEY")
+
+    if not text or not text.strip():
+        return {"error": "Empty input"}
+
+    # 1) Regex / secret detection
+    findings = detect_sensitive_data(text)
+
+    # 2) Log behavior detection
+    log_analysis = analyze_logs(text)
+    log_findings = log_analysis.get("findings", [])
+    log_insights = log_analysis.get("insights", [])
+
+    # 3) Merge both
+    all_findings = findings + log_findings
+
+    # 4) Risk
+    score, level = calculate_risk(all_findings, log_insights)
+
+    # 5) AI Input
+    important_lines = []
+    for f in all_findings:
+        masked_value = str(f["value"])[:80]
+        important_lines.append(f"{f['type']}: {masked_value}")
+
+    ai_input = "\n".join(important_lines[:50]) if important_lines else text[:1000]
+
+    # 6) AI Insights
+    insights = generate_insights(all_findings, log_insights, ai_input, groq_key)
+
+    # 7) Fallback insights if AI/basic empty
+    if not insights.get("basic"):
+        insights["basic"] = []
+
+    if not insights["basic"]:
+        if any(f["type"] == "email" for f in all_findings):
+            insights["basic"].append("User email detected in logs")
+        if any(f["type"] == "phone" for f in all_findings):
+            insights["basic"].append("Phone number found in logs")
+        if any(f["type"] == "password" for f in all_findings):
+            insights["basic"].append("Sensitive credentials exposed")
+        if any(f["type"] == "api_key" for f in all_findings):
+            insights["basic"].append("API key exposed")
+        if any(f["type"] == "token" for f in all_findings):
+            insights["basic"].append("Authentication token exposed")
+
+    return {
+        "summary": f"{len(all_findings)} sensitive items detected. Risk level: {level}",
+        "findings": all_findings,
+        "risk_score": score,
+        "risk_level": level,
+        "insights": insights
+    }
+
+
+# -------------------------------
+# FILE ANALYSIS
+# -------------------------------
 @app.post("/analyze")
 @limiter.limit("5/minute")
 async def analyze(
@@ -46,14 +106,12 @@ async def analyze(
     files: Optional[List[UploadFile]] = File(None)
 ):
     results = []
-    
+
     if files is None or len(files) == 0:
         return {
             "status": "Backend working fine",
             "message": "Upload files to analyze logs"
         }
-
-    groq_key = os.getenv("GROQ_API_KEY")
 
     for file in files:
         content = await file.read()
@@ -68,136 +126,62 @@ async def analyze(
         filename = file.filename.lower()
 
         try:
-            #  PDF SUPPORT
+            # PDF SUPPORT
             if filename.endswith(".pdf"):
                 from pypdf import PdfReader
-                reader = PdfReader(file.file)
+                import io
+                reader = PdfReader(io.BytesIO(content))
                 text = ""
                 for page in reader.pages:
                     text += page.extract_text() or ""
 
-            #  DOCX SUPPORT
+            # DOCX SUPPORT
             elif filename.endswith(".docx"):
                 from docx import Document
-                doc = Document(file.file)
+                import io
+                doc = Document(io.BytesIO(content))
                 text = "\n".join([p.text for p in doc.paragraphs])
 
-            #  DEFAULT TEXT
+            # DEFAULT TEXT
             else:
-                text = content.decode("utf-8")
+                text = content.decode("utf-8", errors="ignore")
 
-        except:
+        except Exception:
+            results.append({
+                "file_name": file.filename,
+                "error": "Could not parse file"
+            })
             continue
 
-        #  DETECTION
-        findings = detect_sensitive_data(text)
-        log_insights = analyze_logs(text)
-
-        #  KEEP ALL OCCURRENCES
-        all_findings = findings
-
-        #  RISK
-        score, level = calculate_risk(all_findings,log_insights)
-
-        #  MASK BEFORE AI
-        important_lines = []
-        for f in all_findings:
-            masked_value = f["value"][:3] + "***"
-            important_lines.append(f"{f['type']}: {masked_value}")
-
-        ai_input = "\n".join(important_lines[:50])
-
-        #  AI INSIGHTS
-        insights = generate_insights(
-            all_findings,
-            log_insights,
-            ai_input,
-            groq_key
-        )
-
-        #  FALLBACK INSIGHTS
-        if not insights["basic"]:
-            if any(f["type"] == "email" for f in all_findings):
-                insights["basic"].append("User email detected in logs")
-            if any(f["type"] == "phone" for f in all_findings):
-                insights["basic"].append("Phone number found in logs")
-
-        summary = f"{len(all_findings)} sensitive items detected. Risk level: {level}"
+        analysis = run_full_analysis(text)
 
         results.append({
             "file_name": file.filename,
             "text": text,
-            "summary": summary,
-            "findings": all_findings,
-            "risk_score": score,
-            "risk_level": level,
-            "insights": insights
+            "summary": analysis["summary"],
+            "findings": analysis["findings"],
+            "risk_score": analysis["risk_score"],
+            "risk_level": analysis["risk_level"],
+            "insights": analysis["insights"]
         })
 
     return {"results": results}
 
 
-from fastapi import Form
-
+# -------------------------------
+# LIVE TEXT ANALYSIS
+# -------------------------------
 @app.post("/analyze-text")
 async def analyze_text(text: str = Form(...)):
-    groq_key = os.getenv("GROQ_API_KEY")
-
-    if not text.strip():
-        return {"error": "Empty input"}
-
-    findings = detect_sensitive_data(text)
-    log_insights = analyze_logs(text)
-
-    score, level = calculate_risk(findings, log_insights)
-
-    important_lines = []
-    for f in findings:
-        masked_value = f["value"][:3] + "***"
-        important_lines.append(f"{f['type']}: {masked_value}")
-
-    ai_input = "\n".join(important_lines[:50]) if important_lines else text[:500]
-
-    insights = generate_insights(findings, log_insights, ai_input, groq_key)
-
-    return {
-        "summary": f"{len(findings)} sensitive items detected. Risk level: {level}",
-        "findings": findings,
-        "risk_score": score,
-        "risk_level": level,
-        "insights": insights
-    }
+    return run_full_analysis(text)
 
 
+# -------------------------------
+# SQL ANALYSIS
+# -------------------------------
 @app.post("/analyze-sql")
 async def analyze_sql(query: str = Form(...)):
-    groq_key = os.getenv("GROQ_API_KEY")
-
-    if not query.strip():
-        return {"error": "Empty SQL input"}
-
-    findings = detect_sensitive_data(query)
-    log_insights = analyze_logs(query)
-
-    score, level = calculate_risk(findings, log_insights)
-
-    important_lines = []
-    for f in findings:
-        masked_value = f["value"][:3] + "***"
-        important_lines.append(f"{f['type']}: {masked_value}")
-
-    ai_input = "\n".join(important_lines[:50]) if important_lines else query[:500]
-
-    insights = generate_insights(findings, log_insights, ai_input, groq_key)
-
-    return {
-        "summary": f"{len(findings)} sensitive items detected. Risk level: {level}",
-        "findings": findings,
-        "risk_score": score,
-        "risk_level": level,
-        "insights": insights
-    }
-
+    return run_full_analysis(query)
 
 # from fastapi import FastAPI, UploadFile, File, Request, Form
 # from typing import List, Optional
