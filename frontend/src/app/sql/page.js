@@ -118,7 +118,7 @@ export default function SQLAnalyzer() {
             ))}
           </div>
 
-          {/*  AI INSIGHTS (ADDED CLEANLY) */}
+          {/*  AI INSIGHTS */}
           {result.insights?.ai?.length > 0 && (
             <div className="bg-white/10 p-4 rounded border border-white/20">
               <h3 className="text-lg">AI Insights</h3>

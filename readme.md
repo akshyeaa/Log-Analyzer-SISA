@@ -48,11 +48,11 @@ Detects and extracts:
 - Calculates overall risk score
 - Helps classify breach severity
 
-### Policy Engine
-- Masks sensitive values before AI processing
-- Prevents raw secrets from being sent to the AI model
-- Enforces secure input handling
-- Supports file size and request control
+### Secure Processing Layer
+- Partially masks sensitive values before AI processing
+- Prevents raw secrets from being sent directly to the AI model
+- Applies secure handling for uploaded and pasted inputs
+- Includes file size limits and request rate limiting
 
 ### AI-Based Log Insights
 Generates:
@@ -230,7 +230,7 @@ Log Analyzer
 ↓
 Risk Engine
 ↓
-Policy Layer
+Secure Processing Layer(Policy Layer)
 ↓
 AI Insights + Response
 ```
@@ -238,7 +238,7 @@ Main backend modules include:
 - Detection Engine
 - Log Analyzer
 - Risk Engine
-- Policy Layer
+- Secure Processing Layer
 - AI Insight Generator
 
 Design choices:
