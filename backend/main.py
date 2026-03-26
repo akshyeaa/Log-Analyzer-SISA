@@ -97,7 +97,7 @@ async def analyze(
         all_findings = findings
 
         #  RISK
-        score, level = calculate_risk(all_findings)
+        score, level = calculate_risk(all_findings,log_insights)
 
         #  MASK BEFORE AI
         important_lines = []
@@ -149,7 +149,7 @@ async def analyze_text(text: str = Form(...)):
     findings = detect_sensitive_data(text)
     log_insights = analyze_logs(text)
 
-    score, level = calculate_risk(findings)
+    score, level = calculate_risk(findings, log_insights)
 
     important_lines = []
     for f in findings:
@@ -179,7 +179,7 @@ async def analyze_sql(query: str = Form(...)):
     findings = detect_sensitive_data(query)
     log_insights = analyze_logs(query)
 
-    score, level = calculate_risk(findings)
+    score, level = calculate_risk(findings, log_insights)
 
     important_lines = []
     for f in findings:
