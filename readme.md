@@ -1,9 +1,9 @@
 # Log Analysis & Data Intelligence Platform
 
 ## Overview
-Log Analysis & Data Intelligence Platform is a full-stack security analysis application designed to function as a secure data scanner, log analyzer, AI insight layer, and risk assessment system.
+Log Analysis & Data Intelligence Platform is a full-stack security analysis application designed to function as a secure data scanner, log analyzer, AI insight layer and risk assessment system.
 
-The platform ingests logs, files, SQL queries, and live text input to detect exposed sensitive data such as passwords, API keys, tokens, emails, and phone numbers. It evaluates security risk levels, highlights findings visually, and generates both rule-based and AI-powered insights to help users quickly understand possible threats and leaks.
+The platform ingests logs, files, SQL queries and live text input to detect exposed sensitive data such as passwords, API keys, tokens, emails and phone numbers. It evaluates security risk levels, highlights findings visually and generates both rule-based and AI-powered insights to help users quickly understand possible threats and leaks.
 
 ---
 
@@ -246,7 +246,7 @@ Design choices:
 - Regex-based scanning is used for fast sensitive data detection
 - SQL is handled using column-value mapping
 - Sensitive values are masked before being sent to AI
-- Results are returned with findings, risk scores, and insights
+- Results are returned with findings, risk scores and insights
 
 ### Challenges Faced
 
